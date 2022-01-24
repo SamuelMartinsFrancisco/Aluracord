@@ -1,0 +1,16 @@
+yarn init -y   ->   Cria o package.json
+yarn add next react react-dom    ->    Adiciona algumas dependências ao package.json, além de criar o yarn.lock e o node_modules
+yarn dev   ->   Executa o next dev
+npx gitignore node -> Cria o arquivo .gitignore para ignorar o node_modules
+
+https://storybook.skynexui.dev/?path=/story/components-box--box-component
+
+
+/////// Só por curiosidade //////
+
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin git@github.com:SamuelMartinFrancisco/nomeRepositório.git 
+git push -u origin main
