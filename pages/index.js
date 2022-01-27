@@ -37,6 +37,12 @@ export default function PaginaInicial() {
   const [username, setUsername] = React.useState('SamuelMartinsFrancisco');
   const roteamento = useRouter();
 
+  fetch('https://api.github.com/users/' + username).then(async (respostaDoServidor) => {
+    // console.log(respostaDoServidor);
+    const respostaEsperada = await respostaDoServidor.json();
+    console.log(respostaEsperada);
+    // Pesquisar mais sobre como tudo isso funciona
+  });
   return (
     <>
       <Box
@@ -103,6 +109,7 @@ export default function PaginaInicial() {
                 setUsername(valor);
               }}
               fullWidth
+              placeholder='Qual seu usuário no GitHub?'
               textFieldColors={{
                 neutral: {
                   textColor: appConfig.theme.colors.neutrals[200],

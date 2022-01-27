@@ -1,26 +1,52 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js';
+
+// Local das informações do supabase: settings -> API
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNzc0MSwiZXhwIjoxOTU4ODgzNzQxfQ.MD-QD63froYSlC1SmIFdTtxI3NfRUnGg9JNXDJc4Rnc';
+const SUPABASE_URL = 'https://lobdmuxpmoyjklzgtwgo.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
-    // Sua lógica vai aqui
+    //
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
-    // ./Sua lógica vai aqui
+    //
+
+    React.useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false})
+            .then(({ data }) => { 
+                console.log('Dados da consulta: ', data);
+                setListaDeMensagens(data);
+            });
+    }, []);
 
     function HandleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
+            // id: listaDeMensagens.length + 1,
             de: 'SamuelMartinsFrancisco',  
             texto: novaMensagem,
         };
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens
-        ]);
+
+        supabaseClient
+            .from('mensagens')
+            .insert([
+                // Tem que ser um objeto com os mesmo campos feitos no supabase
+                mensagem
+            ])
+            .then(({ data }) => {
+                console.log('Criando mensagem:', data);
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens
+                ]);
+            })
         setMensagem('');
     }
-
     return (
         <Box
             styleSheet={{
@@ -85,7 +111,10 @@ export default function ChatPage() {
                                 if(event.key === "Enter"){ 
                                     event.preventDefault();
                                     //console.log(event); 
-                                    HandleNovaMensagem(mensagem);
+                                    event.preventDefault();
+                                    if(mensagem.length > 0){
+                                        HandleNovaMensagem(mensagem);
+                                    } 
                                 }
                             }}
                             placeholder="Insira sua mensagem aqui..."
@@ -101,6 +130,34 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+                        <Box
+                        styleSheet={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            margin: '10px',
+                            maxWidth: '50px',
+                            maxHeight: '100%',
+                        }} 
+                        >
+                            <Button
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    if(mensagem.length > 0){
+                                        HandleNovaMensagem(mensagem);
+                                    } 
+                                }}
+                                type='submit'
+                                label='Ok'
+                                fullWidth
+                                buttonColors={{
+                                    contrastColor: appConfig.theme.colors.neutrals["000"],
+                                    mainColor: appConfig.theme.colors.primary[800],
+                                    mainColorLight: appConfig.theme.colors.primary[400],
+                                    mainColorStrong: appConfig.theme.colors.primary[600],
+                                }}
+                            />
+                    </Box>
                     </Box>
                 </Box>
             </Box>
@@ -116,10 +173,14 @@ function Header() {
                     Chat
                 </Text>
                 <Button
-                    variant='tertiary'
-                    colorVariant='neutral'
                     label='Logout'
                     href="/"
+                    buttonColors={{
+                        contrastColor: appConfig.theme.colors.neutrals["000"],
+                        mainColor: 'tomato',
+                        mainColorLight: appConfig.theme.colors.primary[500],
+                        mainColorStrong: 'rgb(255, 69, 71)',
+                    }}
                 />
             </Box>
         </>
@@ -132,7 +193,7 @@ function MessageList(props) {
         <Box
             tag="ul"
             styleSheet={{
-                overflow: 'scroll',
+                overflow: 'hidden scroll',
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 flex: 1,
@@ -144,15 +205,18 @@ function MessageList(props) {
                 //
                 return (
                     <Text
-                    key={mensagem.id}
-                    tag="li"
-                    styleSheet={{
-                        borderRadius: '5px',
-                        padding: '6px',
-                        marginBottom: '12px',
-                        hover: {
-                            backgroundColor: appConfig.theme.colors.neutrals[700],
-                        }
+                        key={mensagem.id}
+                        tag="li"
+                        styleSheet={{
+                            borderRadius: '5px',
+                            padding: '6px 15px 6px 15px',
+                            marginBottom: '16px',
+                            marginRight: '20px',
+                            borderRadius: '15px',
+                            hover: {
+                                backgroundColor: appConfig.theme.colors.blue[100],
+                            }
+                            
                     }}
                 >
                     <Box
@@ -168,9 +232,9 @@ function MessageList(props) {
                                 display: 'inline-block',
                                 marginRight: '8px',
                             }}
-                            src={`https://github.com/cheddarl.png`}
+                            src={`https://github.com/${mensagem.de}.png`}
                         />
-                        <Text tag="strong">
+                        <Text tag="strong" styleSheet={{color: 'rgba(255,255,255,0.6)'}}>
                             {mensagem.de}
                         </Text>
                         <Text

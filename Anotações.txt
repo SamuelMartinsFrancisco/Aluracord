@@ -3,7 +3,10 @@ yarn add next react react-dom    ->    Adiciona algumas dependências ao package
 yarn dev   ->   Executa o next dev
 npx gitignore node -> Cria o arquivo .gitignore para ignorar o node_modules
 
+yarn add @supabase/supabase-js
+
 https://storybook.skynexui.dev/?path=/story/components-box--box-component
+https://supabase.com/docs/reference/javascript/supabase-client
 
 
 /////// Só por curiosidade //////
