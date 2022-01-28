@@ -2,50 +2,83 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 import { createClient } from '@supabase/supabase-js';
+import { AiOutlineClose } from "react-icons/ai";
+import { IconContext } from 'react-icons/lib';   // Criar um botão de excluir as mensagens
+import { useRouter } from 'next/router';
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
 
 // Local das informações do supabase: settings -> API
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNzc0MSwiZXhwIjoxOTU4ODgzNzQxfQ.MD-QD63froYSlC1SmIFdTtxI3NfRUnGg9JNXDJc4Rnc';
 const SUPABASE_URL = 'https://lobdmuxpmoyjklzgtwgo.supabase.co';
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+function escutaMensagensEmTempoReal(adicionaMensagem) {
+    return supabaseClient
+      .from('mensagens')
+      .on('INSERT', (respostaLive) => {
+        adicionaMensagem(respostaLive.new);
+      })
+      .subscribe();
+}
+
 export default function ChatPage() {
-    //
+    const roteamento = useRouter();
+    const usuarioLogado = roteamento.query.username;
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
-    //
-
+  
     React.useEffect(() => {
         supabaseClient
             .from('mensagens')
             .select('*')
-            .order('id', { ascending: false})
-            .then(({ data }) => { 
-                console.log('Dados da consulta: ', data);
-                setListaDeMensagens(data);
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+            // console.log('Dados da consulta:', data);
+            setListaDeMensagens(data);
             });
+    
+        const subscription = escutaMensagensEmTempoReal((novaMensagem) => {
+            console.log('Nova mensagem:', novaMensagem);
+            console.log('listaDeMensagens:', listaDeMensagens);
+            // Quero reusar um valor de referencia (objeto/array) 
+            // Passar uma função pro setState
+    
+            // setListaDeMensagens([
+            //     novaMensagem,
+            //     ...listaDeMensagens
+            // ])
+            setListaDeMensagens((valorAtualDaLista) => {
+            console.log('valorAtualDaLista:', valorAtualDaLista);
+            return [
+                novaMensagem,
+                ...valorAtualDaLista,
+            ]
+            });
+        });
+    
+        return () => {
+            subscription.unsubscribe();
+        }
     }, []);
 
     function HandleNovaMensagem(novaMensagem) {
         const mensagem = {
             // id: listaDeMensagens.length + 1,
-            de: 'SamuelMartinsFrancisco',  
+            de: usuarioLogado,
             texto: novaMensagem,
         };
-
-        supabaseClient
+      
+          supabaseClient
             .from('mensagens')
             .insert([
-                // Tem que ser um objeto com os mesmo campos feitos no supabase
-                mensagem
+              // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+              mensagem
             ])
             .then(({ data }) => {
-                console.log('Criando mensagem:', data);
-                setListaDeMensagens([
-                    data[0],
-                    ...listaDeMensagens
-                ]);
-            })
-        setMensagem('');
+              console.log('Criando mensagem: ', data);
+            });
+      
+            setMensagem('');
     }
     return (
         <Box
@@ -130,6 +163,12 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+                        {/* CallBack */}
+                        <ButtonSendSticker
+                        onStickerClick={(sticker) => {
+                            // console.log('[USANDO O COMPONENTE] Salva esse sticker no banco', sticker);
+                            HandleNovaMensagem(':sticker: ' + sticker);
+                        }} />
                         <Box
                         styleSheet={{
                             display: 'flex',
@@ -216,7 +255,6 @@ function MessageList(props) {
                             hover: {
                                 backgroundColor: appConfig.theme.colors.blue[100],
                             }
-                            
                     }}
                 >
                     <Box
@@ -241,19 +279,39 @@ function MessageList(props) {
                             styleSheet={{
                                 fontSize: '10px',
                                 marginLeft: '8px',
+                                marginRight: '15px',
                                 color: appConfig.theme.colors.neutrals[300],
                             }}
                             tag="span"
                         >
                             {(new Date().toLocaleDateString())}
                         </Text>
+                        <IconContext.Provider
+                            value={{color: 'rgba(255,115,115,0.6)', size: '14px'}}
+                        >
+                            <AiOutlineClose 
+                                onClick={(event) => {
+                                    //
+                                }}
+                            />
+                        </IconContext.Provider>
                     </Box>
-                    {mensagem.texto}
+                    {/*mensagem.texto.startsWith(':sticker:').toString()*/}
+                    {mensagem.texto.startsWith(':sticker:')
+                    ? (
+                        <Image src={mensagem.texto.replace(':sticker:', '')}
+                            styleSheet={{
+                                maxWidth: '250px',
+                            }}
+                        />
+                    )
+                    : (
+                        mensagem.texto
+                    )}
+                    {/*mensagem.texto*/}
                 </Text>
                 );
             })}
-            
-
         </Box>
     )
 }
